@@ -268,6 +268,7 @@ local multiplierUpgradesBox = TrainingTab:CreateGroupbox({ Name = "Multiplier Up
 local fistStrengthBox = TeleportsTab:CreateGroupbox({ Name = "Fist Strength", Column = 1 }, "INDEX")
 local bodyToughnessBox = TeleportsTab:CreateGroupbox({ Name = "Body Toughness", Column = 2 }, "INDEX")
 local psychicPowerBox = TeleportsTab:CreateGroupbox({ Name = "Psychic Power", Column = 1 }, "INDEX")
+local miscTeleportBox = TeleportsTab:CreateGroupbox({ Name = "Misc Teleports", Column = 2 }, "INDEX")
 
 -- Fun stuff Tab
 local playerTeleportBox = FunTab:CreateGroupbox({ Name = "Player Teleports", Column = 1 }, "INDEX")
@@ -690,11 +691,14 @@ statsBox:CreateToggle({
             local char = player.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
             if hrp then 
-                -- Teleport to best psychic power training zone
+                -- Check psychic power level
                 local psychicStat = getPlayerStat("PsychicPower")
-                local bestCFrame = findBestTrainingZone(psychicStat, autoTrainPPLocations)
-                if bestCFrame then
-                    hrp.CFrame = bestCFrame + Vector3.new(0, 1, 0)
+                -- Only teleport if psychic power is at least 1 million
+                if psychicStat >= 1000000 then
+                    local bestCFrame = findBestTrainingZone(psychicStat, autoTrainPPLocations)
+                    if bestCFrame then
+                        hrp.CFrame = bestCFrame + Vector3.new(0, 1, 0)
+                    end
                 end
             end
             -- Equip psychic tool when turning on
@@ -1242,6 +1246,25 @@ task.spawn(function()
                 
                 -- Get current best training zone
                 local psychicStat = getPlayerStat("Psychic power")
+                
+                -- Only train if psychic power is at least 1 million
+                if psychicStat < 1000000 then
+                    -- Just equip the tool, don't teleport
+                    local backpack = player.Backpack
+                    if backpack then
+                        local psychicBackpack = backpack:FindFirstChild("PsychicPower")
+                        if psychicBackpack then
+                            psychicBackpack.Parent = char
+                            task.wait(0.1)
+                            local psychicChar = char:FindFirstChild("PsychicPower")
+                            if psychicChar then
+                                psychicChar:Activate()
+                            end
+                        end
+                    end
+                    return
+                end
+                
                 local currentBestZone = findBestTrainingZone(psychicStat, autoTrainPPLocations)
                 
                 -- Initialize on first run or when zone changes
@@ -1274,7 +1297,8 @@ task.spawn(function()
                 end
                 
                 -- Check if outside boundary and return player after optional delay
-                if boundaryCenter and boundaryPosition then
+                -- Only enforce boundary if psychic power is at least 1 million
+                if boundaryCenter and boundaryPosition and psychicStat >= 1000000 then
                     local distance = (hrp.Position - boundaryPosition).Magnitude
                     if distance > 15 then
                         -- Just left the boundary
@@ -2161,6 +2185,11 @@ task.spawn(function()
                 local char = player.Character
                 local humanoid = char and char:FindFirstChild("Humanoid")
                 if humanoid and humanoid.Health <= 0 then
+                    -- Fire the refresh character event to speed up respawning
+                    pcall(function()
+                        game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents"):WaitForChild("RefreshCharacter"):FireServer()
+                    end)
+                    
                     local respawnButton = player.PlayerGui:FindFirstChild("IntroGui")
                     if respawnButton then
                         respawnButton = respawnButton:FindFirstChild("PlayButton")
@@ -2354,10 +2383,19 @@ local psychicPowerLocations = {
     { name = "Mystic Stone      Requirement:1Sx      Multiplier:x12B", cframe = CFrame.new(-2304.71436, 244.685776, -368.332184, 0.0844034925, 6.67576145e-08, 0.996431649, 4.6943005e-11, 1, -6.70006557e-08, -0.996431649, 5.7018652e-09, 0.0844034925) },
 }
 
+local miscTeleportLocations = {
+    { name = "Sath", cframe = CFrame.new(482.665924, 249.188126, 894.017273, -0.222691998, -4.4100414e-08, -0.974888861, -4.47415758e-08, 1, -3.5016118e-08, 0.974888861, 3.58202534e-08, -0.222691998) },
+    { name = "Weak", cframe = CFrame.new(485.637146, 250.188309, 669.01532, -0.999867499, 5.4706824e-08, -0.0162793193, 5.46915437e-08, 1, 1.38385103e-09, 0.0162793193, 4.93326546e-10, -0.999867499) },
+    { name = "Reaper", cframe = CFrame.new(-130.662704, 249.184036, 528.746765, -0.999963105, -1.58958269e-08, 0.00859071128, -1.59537841e-08, 1, -6.67801325e-09, -0.00859071128, -6.81482115e-09, -0.999963105) },
+    { name = "Rider", cframe = CFrame.new(159.818192, 249.184113, 1234.3584, -0.0359080397, 1.19680649e-07, 0.999355078, 2.50764494e-08, 1, -1.1885686e-07, -0.999355078, 2.07923598e-08, -0.0359080397) },
+    { name = "Beet", cframe = CFrame.new(535.46991, 249.384033, -461.209625, 0.111730561, 1.16413311e-07, -0.993738532, 3.19874154e-08, 1, 1.20743309e-07, 0.993738532, -4.52778472e-08, 0.111730561) },
+}
+
 --[[ ==== CREATE TELEPORT BUTTONS ==== ]]
 createTeleportButtons(fistStrengthBox, fistStrengthLocations)
 createTeleportButtons(bodyToughnessBox, bodyToughnessLocations)
 createTeleportButtons(psychicPowerBox, psychicPowerLocations)
+createTeleportButtons(miscTeleportBox, miscTeleportLocations)
 
 --[[ ==== CRATE FARMING ==== ]]
 local allCrates = { "SecretCrate", "GodlyCrate", "MythicCrate", "LegendaryCrate", "EpicCrate", "RareCrate", "CommonCrate" }
