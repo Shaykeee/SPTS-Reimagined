@@ -1,6 +1,6 @@
 local Starlight = loadstring(game:HttpGet("https://raw.nebulasoftworks.xyz/starlight"))()  
 local NebulaIcons = loadstring(game:HttpGet("https://raw.nebulasoftworks.xyz/nebula-icon-library-loader"))()
-
+Starlight:SetTheme("Luna")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local Workspace = game.Workspace
@@ -48,13 +48,12 @@ local Window = Starlight:CreateWindow({
     Subtitle = "SPTS v1.0",
     Icon = 2543532,
     LoadingSettings = { Title = "SPTS:Reimagined", Subtitle = "Welcome" },
-    FileSettings = { ConfigFolder = "SPTS" }
 })
 
 Window:CreateHomeTab({
     SupportedExecutors = {}, 
     UnsupportedExecutors = {},
-    DiscordInvite = "", 
+    DiscordInvite = "KK8XR5mcQx", 
     Backdrop = nil,
     IconStyle = 1,
     Changelog = {
@@ -231,33 +230,52 @@ the
 the
 d'brain ]]
 local MainSection = Window:CreateTabSection("Main")
-local MiscSection = Window:CreateTabSection("Misc")
-local FunSection = Window:CreateTabSection("Fun Stuff")
 
--- Create all tabs
-local Main = MainSection:CreateTab({ Name = "Main", Icon = NebulaIcons:GetIcon('view_in_ar', 'Material'), Columns = 1 }, "INDEX")
-local AutoFarm = MainSection:CreateTab({ Name = "Auto Farm", Icon = NebulaIcons:GetIcon('bot', 'Lucide'), Columns = 1 }, "INDEX")
-local Teleports = MiscSection:CreateTab({ Name = "Teleports", Icon = NebulaIcons:GetIcon('map-pin', 'Lucide'), Columns = 1 }, "INDEX")
-local Stats = MainSection:CreateTab({ Name = "Stats", Icon = NebulaIcons:GetIcon('bar-chart-2', 'Lucide'), Columns = 1 }, "INDEX")
-local Misc = MiscSection:CreateTab({ Name = "Misc", Icon = NebulaIcons:GetIcon('build', 'Material'), Columns = 1 }, "INDEX")
-local Config = MiscSection:CreateTab({ Name = "Config", Icon = NebulaIcons:GetIcon('settings', 'Lucide'), Columns = 1 }, "INDEX")
-local FunStuff = FunSection:CreateTab({ Name = "Fun Stuff", Icon = NebulaIcons:GetIcon('sparkle', 'Material'), Columns = 1 }, "INDEX")
+-- Create all tabs under MainSection
+local CratesRollsTab = MainSection:CreateTab({ Name = "Crates & Rolls", Icon = NebulaIcons:GetIcon('box', 'Lucide'), Columns = 2 }, "INDEX")
+local CombatTab = MainSection:CreateTab({ Name = "Combat", Icon = NebulaIcons:GetIcon('bot', 'Lucide'), Columns = 1 }, "INDEX")
+local TrainingTab = MainSection:CreateTab({ Name = "Training", Icon = NebulaIcons:GetIcon('biceps-flexed', 'Lucide'), Columns = 2 }, "INDEX")
+local TeleportsTab = MainSection:CreateTab({ Name = "Teleports", Icon = NebulaIcons:GetIcon('map-pin', 'Lucide'), Columns = 2 }, "INDEX")
+local FunTab = MainSection:CreateTab({ Name = "Fun stuff", Icon = NebulaIcons:GetIcon('sparkle', 'Material'), Columns = 2 }, "INDEX")
+local MiscTab = MainSection:CreateTab({ Name = "Misc", Icon = NebulaIcons:GetIcon('build', 'Material'), Columns = 1 }, "INDEX")
 
 -- Create groupboxes for each feature
-local miscBox = Misc:CreateGroupbox({ Name = "Misc Settings", Column = 1 }, "INDEX")
-local respawnBox = Misc:CreateGroupbox({ Name = "Respawn Settings", Column = 1 }, "INDEX")
-local cratesBox = Main:CreateGroupbox({ Name = "Crate Selector", Column = 1 }, "INDEX")
-local rollsBox = Main:CreateGroupbox({ Name = "Roll Settings", Column = 1 }, "INDEX")
-local statsBox = Stats:CreateGroupbox({ Name = "Stats", Column = 1 }, "INDEX")
-local noMultiplierBox = Stats:CreateGroupbox({ Name = "No Multiplier Training", Column = 1 }, "INDEX")
-local multiplierUpgradesBox = Stats:CreateGroupbox({ Name = "Multiplier Upgrades", Column = 1 }, "INDEX")
-local npcOnehotBox = AutoFarm:CreateGroupbox({ Name = "NPC One-Shot", Column = 1 }, "INDEX")
-local fistStrengthBox = Teleports:CreateGroupbox({ Name = "Fist Strength", Column = 1 }, "INDEX")
-local bodyToughnessBox = Teleports:CreateGroupbox({ Name = "Body Toughness", Column = 1 }, "INDEX")
-local psychicPowerBox = Teleports:CreateGroupbox({ Name = "Psychic Power", Column = 1 }, "INDEX")
-local playerTeleportBox = FunStuff:CreateGroupbox({ Name = "Player Teleports", Column = 1 }, "INDEX")
-local espBox = FunStuff:CreateGroupbox({ Name = "ESP", Column = 1 }, "INDEX")
-Config:BuildConfigGroupbox(1)
+-- Crates & Rolls Tab
+local cratesBox = CratesRollsTab:CreateGroupbox({ Name = "Crate Selector", Column = 1 }, "INDEX")
+local rollsBox = CratesRollsTab:CreateGroupbox({ Name = "Roll Settings", Column = 2 }, "INDEX")
+local Paragraph = cratesBox:CreateParagraph({
+    Name = "Crates",
+    Content = "Select which crates to auto-roll. You can select multiple crates.",
+}, "INDEX")
+local Paragraph = rollsBox:CreateParagraph({
+    Name = "Rolls",
+    Content = "Configure the settings for auto-rolling, You can select multiple races.",
+}, "INDEX")
+
+
+-- Combat Tab
+local npcOnehotBox = CombatTab:CreateGroupbox({ Name = "NPC One-Shot", Column = 1 }, "INDEX")
+local Paragraph = npcOnehotBox:CreateParagraph({
+    Name = "NPCs",
+    Content = "Change between Skills, You can choose either Best i.e Strongest or all the NPCs you can kill.",
+}, "INDEX")
+-- Training Tab
+local statsBox = TrainingTab:CreateGroupbox({ Name = "Stats", Column = 1 }, "INDEX")
+local noMultiplierBox = TrainingTab:CreateGroupbox({ Name = "No Multiplier Training", Column = 2 }, "INDEX")
+local multiplierUpgradesBox = TrainingTab:CreateGroupbox({ Name = "Multiplier Upgrades", Column = 1 }, "INDEX")
+
+-- Teleports Tab
+local fistStrengthBox = TeleportsTab:CreateGroupbox({ Name = "Fist Strength", Column = 1 }, "INDEX")
+local bodyToughnessBox = TeleportsTab:CreateGroupbox({ Name = "Body Toughness", Column = 2 }, "INDEX")
+local psychicPowerBox = TeleportsTab:CreateGroupbox({ Name = "Psychic Power", Column = 1 }, "INDEX")
+
+-- Fun stuff Tab
+local playerTeleportBox = FunTab:CreateGroupbox({ Name = "Player Teleports", Column = 1 }, "INDEX")
+local espBox = FunTab:CreateGroupbox({ Name = "ESP", Column = 2 }, "INDEX")
+
+-- Misc Tab
+local miscBox = MiscTab:CreateGroupbox({ Name = "Misc Settings", Column = 1 }, "INDEX")
+local respawnBox = MiscTab:CreateGroupbox({ Name = "Respawn Settings", Column = 1 }, "INDEX")
 
 --[[ ==== PLAYER TELEPORT SYSTEM VARIABLES (EARLY DECLARATION) ==== ]]
 -- These must be declared here, before the toggle callbacks use them
@@ -1714,12 +1732,28 @@ local function displayOneShotStatus()
     
     local statusText = "Damage (" .. npcAttackType .. "): " .. formatNumber(damage) .. "\n"
     if #oneShotNPCs > 0 then
+        -- Get unique NPC types
+        local uniqueNPCTypes = {}
+        local seenTypes = {}
+        for i = 1, #oneShotNPCs do
+            local npcName = oneShotNPCs[i].name
+            if not seenTypes[npcName] then
+                seenTypes[npcName] = true
+                table.insert(uniqueNPCTypes, npcName)
+            end
+        end
+        
+        -- Sort by strength (highest max health first = strongest)
+        table.sort(uniqueNPCTypes, function(a, b)
+            return (npcMaxHealth[a] or 0) > (npcMaxHealth[b] or 0)
+        end)
+        
         local npcNamesList = {}
-        for i = 1, math.min(3, #oneShotNPCs) do
-            table.insert(npcNamesList, oneShotNPCs[i].name)
+        for i = 1, math.min(3, #uniqueNPCTypes) do
+            table.insert(npcNamesList, uniqueNPCTypes[i])
         end
         statusText = statusText .. "Can one-shot: " .. table.concat(npcNamesList, ", ")
-        if #oneShotNPCs > 3 then statusText = statusText .. " +" .. (#oneShotNPCs - 3) .. " more" end
+        if #uniqueNPCTypes > 3 then statusText = statusText .. " +" .. (#uniqueNPCTypes - 3) .. " more" end
     else
         statusText = statusText .. "No NPCs can be one-shot"
     end
@@ -2748,6 +2782,5 @@ Starlight:OnDestroy(function()
     highlightsTable = {}
 end)
 
-Starlight:LoadAutoloadConfig()
 
 -- Local variable 'char' redeclaration fix: changed second 'local char' to just 'char' in cleanup
