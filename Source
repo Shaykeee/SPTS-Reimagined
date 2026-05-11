@@ -49,7 +49,7 @@ Window:CreateHomeTab({
         {
             Title = "V1.3",
             Date = "10/05/2026",
-            Description = "Auto training zones added, along with various optimizations and bug fixes.",
+            Description = "Various optimizations and bug fixes.",
         },
     }
 })
