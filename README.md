@@ -1,4 +1,4 @@
 # SPTS-Reimagined
 Script For SPTS:R
 
-Discord soon to come
+Discord: https://discord.gg/XZZmwYbQPh
