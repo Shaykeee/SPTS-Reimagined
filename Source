@@ -45,7 +45,7 @@ end
 --[[ ==== UI SETUP ==== ]]
 local Window = Starlight:CreateWindow({
     Name = "SPTS: Reimagined",
-    Subtitle = "SPTS v1.3",
+    Subtitle = "SPTS v1.0",
     Icon = 2543532,
     LoadingSettings = { Title = "SPTS:Reimagined", Subtitle = "Welcome" },
     FileSettings = { ConfigFolder = "SPTS" }
@@ -59,9 +59,9 @@ Window:CreateHomeTab({
     IconStyle = 1,
     Changelog = {
         {
-            Title = "V1.3",
+            Title = "V1.0",
             Date = "10/05/2026",
-            Description = "Auto training zones added, along with various optimizations and bug fixes.",
+            Description = "Auto training zones added, Optimizations and bug fixes.",
         },
     }
 })
