@@ -126,7 +126,6 @@ local function cleanupAllFeatures()
     
     -- Disable crates
     cratesEnabled = false
-    cratesAnnouncementEnabled = false
     
     -- Reset cleanup flags so loops will clean up properly
     bodyToughnessESPCleaned = false
@@ -168,9 +167,6 @@ local function cleanupAllFeatures()
     -- Reset crate settings
     selectedCrates = {}
     savedCFrame = nil
-    cratesAnnouncementEnabled = false
-    announcementCrates = {}
-    announcedCrates = {}
     
     -- Clean up player character
     local char = player.Character
@@ -2482,76 +2478,6 @@ task.spawn(function()
     end
 end)
 
---[[ ==== CRATE ANNOUNCEMENT ==== ]]
-local TextChatService = game:GetService("TextChatService")
-local cratesAnnouncementEnabled = false
-local announcementCrates = {}
-for _, name in ipairs(allCrates) do announcementCrates[name] = true end
-
-cratesBox:CreateLabel({ Text = "Select Crates to Announce" }, "INDEX"):AddDropdown({
-    MultipleOptions = true, Options = allCrates, CurrentOptions = allCrates,
-    Placeholder = "Select Crates",
-    Callback = function(Options)
-        for _, name in ipairs(allCrates) do announcementCrates[name] = false end
-        for _, name in ipairs(Options) do announcementCrates[name] = true end
-    end,
-}, "INDEX")
-
-cratesBox:CreateToggle({
-    Name = "Announce Crate Spawn",
-    CurrentValue = false,
-    Style = 2,
-    Callback = function(Value) cratesAnnouncementEnabled = Value end,
-}, "INDEX")
-
-local announcedCrates = {}
-
---[[ ==== CRATE ANNOUNCEMENT LOOP ==== ]]
--- Task spawn for announcing newly spawned crates to chat
-
-task.spawn(function()
-    while task.wait(0.5) do
-        if cratesAnnouncementEnabled then
-            pcall(function()
-                local crates = getAllCrates()
-                local crateCount = {}
-                local newCratesThisFrame = {}
-                
-                -- Build a set of current crates for quick lookup
-                local currentCrateSet = {}
-                for _, crate in ipairs(crates) do
-                    currentCrateSet[crate] = true
-                end
-                
-                for _, crate in ipairs(crates) do
-                    if announcementCrates[crate.Name] then
-                        if not announcedCrates[crate] then
-                            announcedCrates[crate] = true
-                            newCratesThisFrame[crate.Name] = (newCratesThisFrame[crate.Name] or 0) + 1
-                        end
-                        crateCount[crate.Name] = (crateCount[crate.Name] or 0) + 1
-                    end
-                end
-                
-                for crateName, count in pairs(newCratesThisFrame) do
-                    if count > 1 then
-                        TextChatService.TextChannels.RBXGeneral:SendAsync(crateName .. " has spawned! x" .. count)
-                    else
-                        TextChatService.TextChannels.RBXGeneral:SendAsync(crateName .. " has spawned!")
-                    end
-                    task.wait(0.2)
-                end
-                
-                -- Clean up announcements for crates that no longer exist in the current crate list
-                for crate, _ in pairs(announcedCrates) do
-                    if not currentCrateSet[crate] then
-                        announcedCrates[crate] = nil
-                    end
-                end
-            end)
-        end
-    end
-end)
 
 --[[ ==== RACE ROLLING SYSTEM ==== ]]
 -- Variables and UI for race rolling with auto-roll and monitoring features
@@ -2773,9 +2699,6 @@ Starlight:OnDestroy(function()
     -- Reset crate settings
     selectedCrates = {}
     savedCFrame = nil
-    cratesAnnouncementEnabled = false
-    announcementCrates = {}
-    announcedCrates = {}
     
     -- Clean up player character
     char = player.Character
