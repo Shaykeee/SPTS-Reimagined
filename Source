@@ -44,8 +44,8 @@ end
 
 --[[ ==== UI SETUP ==== ]]
 local Window = Starlight:CreateWindow({
-    Name = "SPTS: Reimagined",
-    Subtitle = "SPTS v1.0",
+    Name = "Vyx Hub",
+    Subtitle = "Vyx Hub SPTS v1.0",
     Icon = 2543532,
     LoadingSettings = { Title = "SPTS:Reimagined", Subtitle = "Welcome" },
 })
