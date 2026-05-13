@@ -80,9 +80,9 @@ Window:CreateHomeTab({
     IconStyle = 1,
     Changelog = {
         {
-            Title = "V1.1",
+            Title = "V1.11",
             Date = "13/05/2026",
-            Description = "Config and AutoConfig system, More in the Discord.",
+            Description = "Name + gang change system to hide real name and gang.",
         },
     }
 })
@@ -134,9 +134,6 @@ local function cleanupAllFeatures()
     -- Disable respawn features
     respawnOnDeathEnabled = false
     respawnCombinedEnabled = false
-    wasPlayerDead = false
-    respawnRefreshCount = 0
-    respawnProcessed = false
     
     -- Disable aura
     auraEnabled = false
@@ -197,8 +194,6 @@ local function cleanupAllFeatures()
     respawnCombinedEnabled = false
     wasPlayerDead = false
     savedDeathPosition = nil
-    respawnRefreshCount = 0
-    respawnProcessed = false
     
     -- Disable aura customization
     auraEnabled = false
@@ -697,8 +692,6 @@ miscBox:CreateToggle({
 -- Variables for respawn and position return functionality
 local respawnOnDeathEnabled = false
 local respawnCombinedEnabled = false
-local respawnRefreshCount = 0
-local respawnProcessed = false
 
 respawnBox:CreateToggle({
     Name = "Auto Respawn",
@@ -711,7 +704,7 @@ respawnBox:CreateToggle({
     Name = "Auto Respawn + Return Position",
     CurrentValue = false,
     Style = 2,
-    Callback = function(Value) respawnCombinedEnabled = Value; wasPlayerDead = false; savedDeathPosition = nil; respawnRefreshCount = 0; respawnProcessed = false end,
+    Callback = function(Value) respawnCombinedEnabled = Value; wasPlayerDead = false; savedDeathPosition = nil end,
 }, "respawnCombinedToggle")
 
 --[[ ==== AUTO STATS TRAINING ==== ]]
@@ -2498,8 +2491,6 @@ task.spawn(function()
                     -- Save position while player is alive
                     if humanoid.Health > 0 and not wasPlayerDead then
                         savedDeathPosition = hrp.CFrame
-                        respawnRefreshCount = 0
-                        respawnProcessed = false
                     end
                     
                     -- When player dies, set flag
@@ -2507,27 +2498,12 @@ task.spawn(function()
                         wasPlayerDead = true
                     end
                     
-                    -- When player respawns (health > 0 after being dead), only process once
-                    if humanoid.Health > 0 and wasPlayerDead and savedDeathPosition and not respawnProcessed then
-                        respawnRefreshCount = respawnRefreshCount + 1
-                        respawnProcessed = true
-                        
-                        -- Teleport on first respawn and again after second refresh
-                        if respawnRefreshCount == 1 or respawnRefreshCount == 2 then
-                            clearBlur()
-                            hrp.CFrame = savedDeathPosition
-                            task.wait(0.3) -- Small delay to ensure teleport completes
-                        end
-                        
-                        -- Reset after the second teleport
-                        if respawnRefreshCount >= 2 then
-                            wasPlayerDead = false
-                            respawnProcessed = false
-                        else
-                            -- Allow another respawn event if under 2 refreshes
-                            task.wait(1)
-                            respawnProcessed = false
-                        end
+                    -- When player respawns (health > 0 after being dead)
+                    if humanoid.Health > 0 and wasPlayerDead and savedDeathPosition then
+                        clearBlur()
+                        hrp.CFrame = savedDeathPosition
+                        wasPlayerDead = false
+                        task.wait(0.5) -- Small delay to ensure teleport completes
                     end
                 end
             end)
