@@ -134,6 +134,9 @@ local function cleanupAllFeatures()
     -- Disable respawn features
     respawnOnDeathEnabled = false
     respawnCombinedEnabled = false
+    wasPlayerDead = false
+    respawnRefreshCount = 0
+    respawnProcessed = false
     
     -- Disable aura
     auraEnabled = false
@@ -144,6 +147,27 @@ local function cleanupAllFeatures()
         antiAFKConnection:Disconnect()
         antiAFKConnection = nil
     end
+    
+    -- Disable persistent name change
+    persistentNameChangeEnabled = false
+    
+    -- Disable persistent gang change
+    persistentGangChangeEnabled = false
+    
+    -- Disable persistent billboard disable and re-enable the billboard
+    persistentBillboardDisabled = false
+    pcall(function()
+        local char = player.Character
+        if char then
+            local head = char:FindFirstChild("Head")
+            if head then
+                local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                if overheadBillboard then
+                    overheadBillboard.Enabled = true
+                end
+            end
+        end
+    end)
     
     -- Disable no multiplier loops
     noMultiplierFSEnabled = false
@@ -173,6 +197,8 @@ local function cleanupAllFeatures()
     respawnCombinedEnabled = false
     wasPlayerDead = false
     savedDeathPosition = nil
+    respawnRefreshCount = 0
+    respawnProcessed = false
     
     -- Disable aura customization
     auraEnabled = false
@@ -262,7 +288,7 @@ local CombatTab = MainSection:CreateTab({ Name = "Combat", Icon = NebulaIcons:Ge
 local TrainingTab = MainSection:CreateTab({ Name = "Training", Icon = NebulaIcons:GetIcon('biceps-flexed', 'Lucide'), Columns = 2 }, "INDEX")
 local TeleportsTab = MainSection:CreateTab({ Name = "Teleports", Icon = NebulaIcons:GetIcon('map-pin', 'Lucide'), Columns = 2 }, "INDEX")
 local FunTab = MainSection:CreateTab({ Name = "Fun stuff", Icon = NebulaIcons:GetIcon('sparkle', 'Material'), Columns = 2 }, "INDEX")
-local MiscTab = MainSection:CreateTab({ Name = "Misc", Icon = NebulaIcons:GetIcon('build', 'Material'), Columns = 1 }, "INDEX")
+local MiscTab = MainSection:CreateTab({ Name = "Misc", Icon = NebulaIcons:GetIcon('build', 'Material'), Columns = 2 }, "INDEX")
 local ConfigTab = MainSection:CreateTab({ Name = "Config", Icon = NebulaIcons:GetIcon('settings', 'Lucide'), Columns = 1 }, "INDEX")
 local CreditsTab = MainSection:CreateTab({ Name = "Credits", Icon = NebulaIcons:GetIcon('crown', 'Lucide'), Columns = 1 }, "INDEX")
 -- Create groupboxes for each feature
@@ -303,7 +329,9 @@ local espBox = FunTab:CreateGroupbox({ Name = "ESP", Column = 2 }, "INDEX")
 
 -- Misc Tab
 local miscBox = MiscTab:CreateGroupbox({ Name = "Misc Settings", Column = 1 }, "INDEX")
-local respawnBox = MiscTab:CreateGroupbox({ Name = "Respawn Settings", Column = 1 }, "INDEX")
+local respawnBox = MiscTab:CreateGroupbox({ Name = "Respawn Settings", Column = 2 }, "INDEX")
+local playerNameBox = MiscTab:CreateGroupbox({ Name = "Player Name", Column = 2 }, "INDEX")
+local gangNameBox = MiscTab:CreateGroupbox({ Name = "Gang Name", Column = 1 }, "INDEX")
 
 -- Credits Tab
 local creditsBox = CreditsTab:CreateGroupbox({ Name = "Credits", Column = 1 }, "INDEX")
@@ -326,6 +354,141 @@ local specialThanksParagraph = creditsbox2:CreateParagraph({
     Name = "Special Thanks",
     Content = "Starlight UI Framework by NebulaSoftWorks \nGithub source https://github.com/Nebula-Softworks \nTheir discord: https://dsc.gg/nebulasoftworks \nFor providing an amazing UI framework that made this script possible and easy to develop. \nAnd also for their support and help during development.",
 }, "INDEX")
+
+--[[ ==== PLAYER NAME CHANGER ==== ]]
+local customPlayerName = "Vyx Hub"
+local persistentNameChangeEnabled = false
+
+local nameInput = playerNameBox:CreateInput({
+    Name = "Change Player Name",
+    Icon = NebulaIcons:GetIcon('text-cursor-input', 'Lucide'),
+    CurrentValue = "Vyx Hub",
+    PlaceholderText = "Change player name",
+    Callback = function(Text)
+        customPlayerName = Text
+    end,
+}, "playerNameInput")
+
+playerNameBox:CreateButton({
+    Name = "Apply Name Change",
+    Callback = function()
+        pcall(function()
+            local char = player.Character
+            if char then
+                local head = char:FindFirstChild("Head")
+                if head then
+                    local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                    if overheadBillboard then
+                        local nameLabel = overheadBillboard:FindFirstChild("NameLabel")
+                        if nameLabel then
+                            nameLabel.Text = customPlayerName
+                        end
+                    end
+                end
+            end
+        end)
+    end,
+}, "applyNameChangeButton")
+
+playerNameBox:CreateToggle({
+    Name = "Persistent Name Change",
+    CurrentValue = false,
+    Style = 2,
+    Callback = function(Value)
+        persistentNameChangeEnabled = Value
+    end,
+}, "persistentNameToggle")
+
+playerNameBox:CreateButton({
+    Name = "Hide all",
+    Callback = function()
+        pcall(function()
+            local char = player.Character
+            if char then
+                local head = char:FindFirstChild("Head")
+                if head then
+                    local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                    if overheadBillboard then
+                        overheadBillboard.Enabled = false
+                    end
+                end
+            end
+        end)
+    end,
+}, "disablePlayerBillboard")
+
+--[[ ==== PERSISTENT BILLBOARD TOGGLE ==== ]]
+local persistentBillboardDisabled = false
+
+playerNameBox:CreateToggle({
+    Name = "Persistent Hide all",
+    CurrentValue = false,
+    Style = 2,
+    Callback = function(Value)
+        persistentBillboardDisabled = Value
+        -- Immediately apply when toggle changes
+        pcall(function()
+            local char = player.Character
+            if char then
+                local head = char:FindFirstChild("Head")
+                if head then
+                    local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                    if overheadBillboard then
+                        overheadBillboard.Enabled = not Value
+                    end
+                end
+            end
+        end)
+    end,
+}, "persistentBillboardToggle")
+
+--[[ ==== GANG NAME CHANGER ==== ]]
+local customGangName = "Vyx"
+local persistentGangChangeEnabled = false
+
+local gangInput = gangNameBox:CreateInput({
+    Name = "Change Gang Name",
+    Icon = NebulaIcons:GetIcon('text-cursor-input', 'Lucide'),
+    CurrentValue = "Vyx",
+    PlaceholderText = "Change gang name",
+    Callback = function(Text)
+        customGangName = Text
+    end,
+}, "gangNameInput")
+
+gangNameBox:CreateButton({
+    Name = "Apply Gang Change",
+    Callback = function()
+        pcall(function()
+            local char = player.Character
+            if char then
+                local head = char:FindFirstChild("Head")
+                if head then
+                    local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                    if overheadBillboard then
+                        local gangFrame = overheadBillboard:FindFirstChild("Gang_Frame")
+                        if gangFrame then
+                            local gangTxt = gangFrame:FindFirstChild("Gang_Txt")
+                            if gangTxt then
+                                gangTxt.Text = "[Leader] " .. customGangName
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end,
+}, "applyGangChangeButton")
+
+gangNameBox:CreateToggle({
+    Name = "Persistent Gang Change",
+    CurrentValue = false,
+    Style = 2,
+    Callback = function(Value)
+        persistentGangChangeEnabled = Value
+    end,
+}, "persistentGangToggle")
+
 
 --[[ ==== FUN STUFF UI ELEMENTS ==== ]]
 -- Player Status Teleport UI
@@ -534,6 +697,8 @@ miscBox:CreateToggle({
 -- Variables for respawn and position return functionality
 local respawnOnDeathEnabled = false
 local respawnCombinedEnabled = false
+local respawnRefreshCount = 0
+local respawnProcessed = false
 
 respawnBox:CreateToggle({
     Name = "Auto Respawn",
@@ -546,7 +711,7 @@ respawnBox:CreateToggle({
     Name = "Auto Respawn + Return Position",
     CurrentValue = false,
     Style = 2,
-    Callback = function(Value) respawnCombinedEnabled = Value; wasPlayerDead = false; savedDeathPosition = nil end,
+    Callback = function(Value) respawnCombinedEnabled = Value; wasPlayerDead = false; savedDeathPosition = nil; respawnRefreshCount = 0; respawnProcessed = false end,
 }, "respawnCombinedToggle")
 
 --[[ ==== AUTO STATS TRAINING ==== ]]
@@ -2333,6 +2498,8 @@ task.spawn(function()
                     -- Save position while player is alive
                     if humanoid.Health > 0 and not wasPlayerDead then
                         savedDeathPosition = hrp.CFrame
+                        respawnRefreshCount = 0
+                        respawnProcessed = false
                     end
                     
                     -- When player dies, set flag
@@ -2340,12 +2507,27 @@ task.spawn(function()
                         wasPlayerDead = true
                     end
                     
-                    -- When player respawns (health > 0 after being dead)
-                    if humanoid.Health > 0 and wasPlayerDead and savedDeathPosition then
-                        clearBlur()
-                        hrp.CFrame = savedDeathPosition
-                        wasPlayerDead = false
-                        task.wait(0.5) -- Small delay to ensure teleport completes
+                    -- When player respawns (health > 0 after being dead), only process once
+                    if humanoid.Health > 0 and wasPlayerDead and savedDeathPosition and not respawnProcessed then
+                        respawnRefreshCount = respawnRefreshCount + 1
+                        respawnProcessed = true
+                        
+                        -- Teleport on first respawn and again after second refresh
+                        if respawnRefreshCount == 1 or respawnRefreshCount == 2 then
+                            clearBlur()
+                            hrp.CFrame = savedDeathPosition
+                            task.wait(0.3) -- Small delay to ensure teleport completes
+                        end
+                        
+                        -- Reset after the second teleport
+                        if respawnRefreshCount >= 2 then
+                            wasPlayerDead = false
+                            respawnProcessed = false
+                        else
+                            -- Allow another respawn event if under 2 refreshes
+                            task.wait(1)
+                            respawnProcessed = false
+                        end
                     end
                 end
             end)
@@ -2368,6 +2550,57 @@ player.CharacterAdded:Connect(function(char)
                     if psychicChar then
                         psychicChar:Activate()
                     end
+                end
+            end
+        end)
+    end
+    
+    -- Persistent name change on respawn
+    if persistentNameChangeEnabled then
+        task.spawn(function()
+            task.wait(0.2)
+            local head = char:FindFirstChild("Head")
+            if head then
+                local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                if overheadBillboard then
+                    local nameLabel = overheadBillboard:FindFirstChild("NameLabel")
+                    if nameLabel then
+                        nameLabel.Text = customPlayerName
+                    end
+                end
+            end
+        end)
+    end
+    
+    -- Persistent gang change on respawn
+    if persistentGangChangeEnabled then
+        task.spawn(function()
+            task.wait(0.2)
+            local head = char:FindFirstChild("Head")
+            if head then
+                local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                if overheadBillboard then
+                    local gangFrame = overheadBillboard:FindFirstChild("Gang_Frame")
+                    if gangFrame then
+                        local gangTxt = gangFrame:FindFirstChild("Gang_Txt")
+                        if gangTxt then
+                            gangTxt.Text = "[Leader] " .. customGangName
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    
+    -- Persistent billboard disable on respawn
+    if persistentBillboardDisabled then
+        task.spawn(function()
+            task.wait(0.2)
+            local head = char:FindFirstChild("Head")
+            if head then
+                local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                if overheadBillboard then
+                    overheadBillboard.Enabled = false
                 end
             end
         end)
@@ -2408,6 +2641,27 @@ task.spawn(function()
                 antiAFKConnection:Disconnect()
                 antiAFKConnection = nil
             end
+        end
+    end
+end)
+
+--[[ ==== BILLBOARD DISABLE MAINTENANCE LOOP ==== ]]
+-- Continuously maintains the billboard disabled state across deaths
+task.spawn(function()
+    while task.wait(1) do
+        if persistentBillboardDisabled then
+            pcall(function()
+                local char = player.Character
+                if char then
+                    local head = char:FindFirstChild("Head")
+                    if head then
+                        local overheadBillboard = head:FindFirstChild("OverheadBillboard")
+                        if overheadBillboard and overheadBillboard.Enabled then
+                            overheadBillboard.Enabled = false
+                        end
+                    end
+                end
+            end)
         end
     end
 end)
