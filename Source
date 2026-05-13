@@ -44,11 +44,33 @@ end
 
 --[[ ==== UI SETUP ==== ]]
 local Window = Starlight:CreateWindow({
-    Name = "Vyx Hub",
-    Subtitle = "Vyx Hub SPTS v1.0",
+    Name = "SPTS:R (Beta)",
+    Subtitle = "Vyx Hub",
     Icon = 2543532,
     LoadingSettings = { Title = "SPTS:Reimagined", Subtitle = "Welcome" },
 })
+
+local Dialog = Window:PromptDialog({
+    Name = "Warning",
+    Content = "It is suggested to not use blatant features inside public servers as it may cause you to get banned. Use at your own risk.",
+    Type = 1,
+    Actions = { 
+        Primary = {
+            Name = "Okay!",
+            Icon = NebulaIcons:GetIcon("check", "Material"),
+            Callback = function()
+
+            end
+        }, 
+        {
+            Name = "Cancel",
+            Callback = function()
+
+            end
+        },
+    }
+})
+
 
 Window:CreateHomeTab({
     SupportedExecutors = {}, 
@@ -58,9 +80,9 @@ Window:CreateHomeTab({
     IconStyle = 1,
     Changelog = {
         {
-            Title = "V1.0",
-            Date = "10/05/2026",
-            Description = "Auto training zones added, Optimizations and bug fixes.",
+            Title = "V1.1",
+            Date = "13/05/2026",
+            Description = "Config and AutoConfig system, More in the Discord.",
         },
     }
 })
@@ -115,6 +137,13 @@ local function cleanupAllFeatures()
     
     -- Disable aura
     auraEnabled = false
+    
+    -- Disable anti-AFK
+    antiAFKEnabled = false
+    if antiAFKConnection then
+        antiAFKConnection:Disconnect()
+        antiAFKConnection = nil
+    end
     
     -- Disable no multiplier loops
     noMultiplierFSEnabled = false
@@ -234,8 +263,10 @@ local TrainingTab = MainSection:CreateTab({ Name = "Training", Icon = NebulaIcon
 local TeleportsTab = MainSection:CreateTab({ Name = "Teleports", Icon = NebulaIcons:GetIcon('map-pin', 'Lucide'), Columns = 2 }, "INDEX")
 local FunTab = MainSection:CreateTab({ Name = "Fun stuff", Icon = NebulaIcons:GetIcon('sparkle', 'Material'), Columns = 2 }, "INDEX")
 local MiscTab = MainSection:CreateTab({ Name = "Misc", Icon = NebulaIcons:GetIcon('build', 'Material'), Columns = 1 }, "INDEX")
-
+local ConfigTab = MainSection:CreateTab({ Name = "Config", Icon = NebulaIcons:GetIcon('settings', 'Lucide'), Columns = 1 }, "INDEX")
+local CreditsTab = MainSection:CreateTab({ Name = "Credits", Icon = NebulaIcons:GetIcon('crown', 'Lucide'), Columns = 1 }, "INDEX")
 -- Create groupboxes for each feature
+ConfigTab:BuildConfigGroupbox(1)  -- Automatically build config groupbox in the first column
 -- Crates & Rolls Tab
 local cratesBox = CratesRollsTab:CreateGroupbox({ Name = "Crate Selector", Column = 1 }, "INDEX")
 local rollsBox = CratesRollsTab:CreateGroupbox({ Name = "Roll Settings", Column = 2 }, "INDEX")
@@ -274,15 +305,31 @@ local espBox = FunTab:CreateGroupbox({ Name = "ESP", Column = 2 }, "INDEX")
 local miscBox = MiscTab:CreateGroupbox({ Name = "Misc Settings", Column = 1 }, "INDEX")
 local respawnBox = MiscTab:CreateGroupbox({ Name = "Respawn Settings", Column = 1 }, "INDEX")
 
+-- Credits Tab
+local creditsBox = CreditsTab:CreateGroupbox({ Name = "Credits", Column = 1 }, "INDEX")
+local creditsbox2 = CreditsTab:CreateGroupbox({ Name = "Special Thanks", Column = 1 }, "INDEX")
+
 --[[ ==== PLAYER TELEPORT SYSTEM VARIABLES (EARLY DECLARATION) ==== ]]
 -- These must be declared here, before the toggle callbacks use them
 local playerStatusTeleportEnabled = false
 local playerStatusTeleportCategories = {"Innocent"}
 local weldedPlayers = {}  -- Track players welded to main player and their last known status
 
+--[[ ==== CREDITS ==== ]]
+local creditsParagraph = creditsBox:CreateParagraph({
+    Name = "VYX HUB",
+    Content = "Script: SPTS:Reimagined \nDeveloped by OCXY and VYX \nPurpose: A comprehensive script for SPTS:Reimagined to make life easier.",
+
+}, "INDEX")
+
+local specialThanksParagraph = creditsbox2:CreateParagraph({
+    Name = "Special Thanks",
+    Content = "Starlight UI Framework by NebulaSoftWorks \nGithub source https://github.com/Nebula-Softworks \nTheir discord: https://dsc.gg/nebulasoftworks \nFor providing an amazing UI framework that made this script possible and easy to develop. \nAnd also for their support and help during development.",
+}, "INDEX")
+
 --[[ ==== FUN STUFF UI ELEMENTS ==== ]]
 -- Player Status Teleport UI
-playerTeleportBox:CreateLabel({ Text = "Select Player Status" }, "INDEX"):AddDropdown({
+playerTeleportBox:CreateLabel({ Text = "Select Player Status" }, "playerStatusDropdown"):AddDropdown({
     MultipleOptions = true, 
     Options = { "Innocent", "Hero", "Villain" }, 
     CurrentOptions = { "Innocent" },
@@ -297,7 +344,7 @@ playerTeleportBox:CreateLabel({ Text = "Select Player Status" }, "INDEX"):AddDro
             playerStatusTeleportCategories = {"Innocent"}
         end
     end,
-}, "INDEX")
+}, "playerStatusDropdown")
 
 playerTeleportBox:CreateToggle({
     Name = "Teleport Players (By Status)",
@@ -352,7 +399,7 @@ playerTeleportBox:CreateToggle({
             weldedPlayers = {}
         end
     end,
-}, "INDEX")
+}, "playerStatusToggle")
 
 -- Body Toughness ESP UI
 espBox:CreateToggle({
@@ -365,7 +412,7 @@ espBox:CreateToggle({
             bodyToughnessESPCleaned = false  -- Reset cleanup flag when enabled
         end
     end,
-}, "INDEX")
+}, "BTESPToggle")
 
 -- Psychic Power ESP UI
 espBox:CreateToggle({
@@ -378,7 +425,7 @@ espBox:CreateToggle({
             psychicPowerESPCleaned = false  -- Reset cleanup flag when enabled
         end
     end,
-}, "INDEX")
+}, "PPESPToggle")
 
 --[[ ==== HELPER FUNCTIONS ==== ]]
 local function teleportToLocation(cframe)
@@ -423,6 +470,11 @@ miscBox:CreateButton({
     end,
 }, "INDEX")
 
+--[[ ==== ANTI-AFK SYSTEM ==== ]]
+-- Variables for anti-AFK feature
+local antiAFKEnabled = false
+local antiAFKConnection = nil
+
 --[[ ==== AURA CUSTOMIZATION ==== ]]
 -- Variables for Killing Intent Aura customization
 local auraEnabled = false
@@ -435,21 +487,48 @@ miscBox:CreateToggle({
     CurrentValue = false,
     Style = 2,
     Callback = function(Value) auraEnabled = Value; auraFound = false end,
-}, "INDEX")
+}, "killingIntentAuraToggle")
 
 miscBox:CreateSlider({
     Name = "Aura Width (X)",
     Icon = NebulaIcons:GetIcon('chart-no-axes-column-increasing', 'Lucide'),
     Range = {17.8, 200}, Increment = 0.1, CurrentValue = 17.8,
     Callback = function(Value) auraXValue = Value; auraFound = false end,
-}, "INDEX")
+}, "auraWidthSlider")
 
 miscBox:CreateSlider({
     Name = "Aura Length (Z)",
     Icon = NebulaIcons:GetIcon('chart-no-axes-column-increasing', 'Lucide'),
     Range = {17.4, 200}, Increment = 0.1, CurrentValue = 17.4,
     Callback = function(Value) auraZValue = Value; auraFound = false end,
-}, "INDEX")
+}, "auraLengthSlider")
+
+miscBox:CreateToggle({
+    Name = "Anti-AFK",
+    CurrentValue = false,
+    Style = 2,
+    Callback = function(Value) 
+        antiAFKEnabled = Value
+        if Value then
+            -- Attempt to disconnect existing Idled connections
+            if getconnections then
+                for _, connection in pairs(getconnections(player.Idled)) do
+                    if connection["Disable"] then
+                        connection["Disable"](connection)
+                    elseif connection["Disconnect"] then
+                        connection["Disconnect"](connection)
+                    end
+                end
+            end
+        else
+            -- Disconnect the anti-AFK connection when disabled
+            if antiAFKConnection then
+                antiAFKConnection:Disconnect()
+                antiAFKConnection = nil
+            end
+        end
+    end,
+}, "antiAFKToggle")
 
 --[[ ==== RESPAWN SETTINGS ==== ]]
 -- Variables for respawn and position return functionality
@@ -461,14 +540,14 @@ respawnBox:CreateToggle({
     CurrentValue = false,
     Style = 2,
     Callback = function(Value) respawnOnDeathEnabled = Value end,
-}, "INDEX")
+}, "respawnToggle")
 
 respawnBox:CreateToggle({
     Name = "Auto Respawn + Return Position",
     CurrentValue = false,
     Style = 2,
     Callback = function(Value) respawnCombinedEnabled = Value; wasPlayerDead = false; savedDeathPosition = nil end,
-}, "INDEX")
+}, "respawnCombinedToggle")
 
 --[[ ==== AUTO STATS TRAINING ==== ]]
 -- Variables for stat auto-training toggles
@@ -633,7 +712,7 @@ statsBox:CreateToggle({
             end
         end
     end,
-}, "INDEX")
+}, "autoFistStrengthToggle")
 
 statsBox:CreateToggle({
     Name = "Auto Body Toughness",
@@ -654,7 +733,7 @@ statsBox:CreateToggle({
             end
         end
     end,
-}, "INDEX")
+}, "autoBodyToughnessToggle")
 
 statsBox:CreateToggle({
     Name = "Auto Body Toughness (Death Training)",
@@ -675,7 +754,7 @@ statsBox:CreateToggle({
             end
         end
     end,
-}, "INDEX")
+}, "autoBodyToughnessDeathToggle")
 
 statsBox:CreateToggle({
     Name = "Auto Psychic Power",
@@ -725,7 +804,7 @@ statsBox:CreateToggle({
             end)
         end
     end,
-}, "INDEX")
+}, "autoPsychicToggle")
 
 --[[ ==== NO MULTIPLIER TRAINING ==== ]]
 -- Variables for no-multiplier stat training (uses different methods)
@@ -738,14 +817,14 @@ noMultiplierBox:CreateToggle({
     CurrentValue = false,
     Style = 2,
     Callback = function(Value) noMultiplierFSEnabled = Value end,
-}, "INDEX")
+}, "noMultiplierFSToggle")
 
 noMultiplierBox:CreateToggle({
     Name = "No Multiplier BT",
     CurrentValue = false,
     Style = 2,
     Callback = function(Value) noMultiplierBTEnabled = Value end,
-}, "INDEX")
+}, "noMultiplierBTToggle")
 
 noMultiplierBox:CreateToggle({
     Name = "No Multiplier PP",
@@ -766,14 +845,14 @@ noMultiplierBox:CreateToggle({
             end)
         end
     end,
-}, "INDEX")
+}, "noMultiplierPPToggle")
 
 --[[ ==== MULTIPLIER UPGRADES ==== ]]
 -- Variables for multiplier upgrade system
 local multiplierUpgradesEnabled = false
 local selectedMultiplierStat = "FistStrengthMultiplier"
 
-multiplierUpgradesBox:CreateLabel({ Text = "Select Stat to Upgrade" }, "INDEX"):AddDropdown({
+multiplierUpgradesBox:CreateLabel({ Text = "Select Stat to Upgrade" }, "multiplierStatDropdown"):AddDropdown({
     MultipleOptions = false,
     Options = { "Fist Strength", "Body Toughness", "Psychic Power", "Jump Force", "Movement Speed" },
     CurrentOptions = { "Fist Strength" },
@@ -790,14 +869,14 @@ multiplierUpgradesBox:CreateLabel({ Text = "Select Stat to Upgrade" }, "INDEX"):
             selectedMultiplierStat = statMap[Options[1]] or "FistStrengthMultiplier"
         end
     end,
-}, "INDEX")
+}, "multiplierStatDropdown")
 
 multiplierUpgradesBox:CreateToggle({
     Name = "Upgrade Multiplier",
     CurrentValue = false,
     Style = 2,
     Callback = function(Value) multiplierUpgradesEnabled = Value end,
-}, "INDEX")
+}, "multiplierUpgradesToggle")
 
 --[[ ==== NO MULTIPLIER TRAINING LOOPS ==== ]]
 -- Task spawns for no-multiplier training features
@@ -1687,7 +1766,7 @@ end
 --[[ ==== NPC ONE-SHOT FARMING UI ==== ]]
 -- Dropdowns and toggles for NPC one-shot farming configuration
 
-npcOnehotBox:CreateLabel({ Text = "Select Attack Type" }, "INDEX"):AddDropdown({
+npcOnehotBox:CreateLabel({ Text = "Select Attack Type" }, "attackType"):AddDropdown({
     Options = { "Punch", "EnergySphere" },
     CurrentOption = "EnergySphere",
     Placeholder = "Select Attack",
@@ -1698,9 +1777,9 @@ npcOnehotBox:CreateLabel({ Text = "Select Attack Type" }, "INDEX"):AddDropdown({
             npcAttackType = Option
         end
     end,
-}, "INDEX")
+}, "attackType")
 
-npcOnehotBox:CreateLabel({ Text = "Select NPC Mode" }, "INDEX"):AddDropdown({
+npcOnehotBox:CreateLabel({ Text = "Select NPC Mode" }, "oneshotMode"):AddDropdown({
     Options = { "All NPCs", "Best NPC" },
     CurrentOption = "Best NPC",
     Placeholder = "Select Mode",
@@ -1711,7 +1790,7 @@ npcOnehotBox:CreateLabel({ Text = "Select NPC Mode" }, "INDEX"):AddDropdown({
             npcOneshotMode = (Option == "All NPCs") and "All" or "Highest"
         end
     end,
-}, "INDEX")
+}, "oneshotMode")
 
 npcOnehotBox:CreateToggle({
     Name = "Auto One-Shot Farming",
@@ -1742,7 +1821,7 @@ npcOnehotBox:CreateToggle({
             end
         end
     end,
-}, "INDEX")
+}, "npcAutofarmToggle")
 
 local function displayOneShotStatus()
     local oneShotNPCs = getOneShotNPCs()
@@ -2295,10 +2374,45 @@ player.CharacterAdded:Connect(function(char)
     end
 end)
 
+--[[ ==== ANTI-AFK LOOP ==== ]]
+-- Prevents player from being kicked for idling by using VirtualUser
+task.spawn(function()
+    while task.wait(1) do
+        if antiAFKEnabled then
+            pcall(function()
+                -- Try to use getconnections to disable Idled event (method 1)
+                if getconnections then
+                    for _, connection in pairs(getconnections(player.Idled)) do
+                        if connection["Disable"] then
+                            connection["Disable"](connection)
+                        elseif connection["Disconnect"] then
+                            connection["Disconnect"](connection)
+                        end
+                    end
+                else
+                    -- Fallback: Connect to Idled and use VirtualUser (method 2)
+                    if not antiAFKConnection then
+                        antiAFKConnection = player.Idled:Connect(function()
+                            local virtualUser = game:GetService("VirtualUser")
+                            if virtualUser then
+                                virtualUser:CaptureController()
+                                virtualUser:ClickButton2(Vector2.new())
+                            end
+                        end)
+                    end
+                end
+            end)
+        else
+            -- Clean up connection when disabled
+            if antiAFKConnection then
+                antiAFKConnection:Disconnect()
+                antiAFKConnection = nil
+            end
+        end
+    end
+end)
 
-
-
-
+--[[ ==== CLEANUP FUNCTION UPDATE ==== ]]
 
 -- main = {}; do
 --     main.clickButton = function(v)
@@ -2398,14 +2512,14 @@ local allCrates = { "SecretCrate", "GodlyCrate", "MythicCrate", "LegendaryCrate"
 local selectedCrates = {}
 for _, name in ipairs(allCrates) do selectedCrates[name] = true end
 
-cratesBox:CreateLabel({ Text = "Select Crates to Include" }, "INDEX"):AddDropdown({
+cratesBox:CreateLabel({ Text = "Select Crates to Include" }, "crateOptionDropdown"):AddDropdown({
     MultipleOptions = true, Options = allCrates, CurrentOptions = allCrates,
     Placeholder = "Select Crates",
     Callback = function(Options)
         for _, name in ipairs(allCrates) do selectedCrates[name] = false end
         for _, name in ipairs(Options) do selectedCrates[name] = true end
     end,
-}, "INDEX")
+}, "crateOptionDropdown")
 
 local savedCFrame = nil
 
@@ -2434,7 +2548,7 @@ cratesBox:CreateToggle({
     CurrentValue = false,
     Style = 2,
     Callback = function(Value) cratesEnabled = Value end,
-}, "INDEX")
+}, "autoCratesToggle")
 
 --[[ ==== AUTO CRATES LOOP ==== ]]
 -- Task spawn for collecting crates automatically
@@ -2488,14 +2602,14 @@ local allRaces = {
 local selectedRaces = {}
 for _, race in ipairs(allRaces) do selectedRaces[race] = true end
 
-rollsBox:CreateLabel({ Text = "Select Desired Rolls" }, "INDEX"):AddDropdown({
+rollsBox:CreateLabel({ Text = "Select Desired Rolls" }, "raceOptionsDropdown"):AddDropdown({
     MultipleOptions = true, Options = allRaces, CurrentOptions = allRaces,
     Placeholder = "Select Rolls",
     Callback = function(Options)
         for _, race in ipairs(allRaces) do selectedRaces[race] = false end
         for _, race in ipairs(Options) do selectedRaces[race] = true end
     end,
-}, "INDEX")
+}, "raceOptionsDropdown")
 
 -- Reference to race roll UI elements
 local raceLabel = player:WaitForChild("PlayerGui"):WaitForChild("RaceRollGui"):WaitForChild("Main"):WaitForChild("CurrentRaceLabel")
@@ -2616,13 +2730,13 @@ end
 --[[ ==== RACE ROLLING TOGGLES ==== ]]
 
 rollsBox:CreateToggle({
-    Name = "Monitor Rolls",
+    Name = "Monitor Rolls (Manual)",
     CurrentValue = false,
     Style = 2,
     Callback = function(Value)
         if Value then startMonitoring() else stopMonitoring() end
     end,
-}, "INDEX")
+}, "monitorRollsToggle")
 
 rollsBox:CreateToggle({
     Name = "Auto Roll",
@@ -2631,7 +2745,7 @@ rollsBox:CreateToggle({
     Callback = function(Value)
         if Value then task.spawn(startAutoRoll) else isAutoRolling = false end
     end,
-}, "INDEX")
+}, "autoRollToggle")
 
 --[[ ==== CLEANUP ON DESTROY ==== ]]
 Starlight:OnDestroy(function()
@@ -2743,5 +2857,5 @@ Starlight:OnDestroy(function()
     highlightsTable = {}
 end)
 
-
+Starlight:LoadAutoConfig()
 -- Local variable 'char' redeclaration fix: changed second 'local char' to just 'char' in cleanup
