@@ -3111,5 +3111,5 @@ Starlight:OnDestroy(function()
     highlightsTable = {}
 end)
 
-Starlight:LoadAutoConfig()
+Starlight:LoadAutoloadConfig()
 -- Local variable 'char' redeclaration fix: changed second 'local char' to just 'char' in cleanup
