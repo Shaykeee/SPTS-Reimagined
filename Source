@@ -2784,7 +2784,7 @@ cratesBox:CreateToggle({
 -- Task spawn for collecting crates automatically
 
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.5) do
         if cratesEnabled then
             pcall(function()
                 local char = player.Character
